@@ -1,5 +1,5 @@
 """CPU functionality."""
-
+# Day 1: review specs.
 import sys
 
 class CPU:
