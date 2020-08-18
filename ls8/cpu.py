@@ -37,6 +37,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -72,4 +74,10 @@ class CPU:
                 self.pc += 2
             if this_instr == 0b10000010:
                 self.reg[self.ram[self.pc+1]] = self.ram[self.pc+2]
+                self.pc += 3
+            elif this_instr == 0b10100000:
+                self.alu("ADD", self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 3
+            elif this_instr == 0b10100010:
+                self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
                 self.pc += 3
