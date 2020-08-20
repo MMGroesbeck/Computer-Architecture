@@ -8,7 +8,7 @@ from cpu import *
 if len(sys.argv) >= 2:
     filename = sys.argv[1]
 else:
-    filename = "./examples.print8.ls8"
+    filename = "./examples/print8.ls8"
 
 cpu = CPU()
 

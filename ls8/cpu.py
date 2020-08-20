@@ -9,9 +9,11 @@ class CPU:
         """Construct a new CPU."""
         self.pc = 0
         self.reg = [0] * 8
-        """Load a program into memory."""
+        self.stack = [0] * 256
+        self.reg[7] = 256
 
     def load(self, filename):
+        """Load a program into memory."""
         program = []
         with open(filename, "r") as input:
             prog_lines = input.readlines()
@@ -22,15 +24,28 @@ class CPU:
         address = 0
         self.ram = [0] * len(program)
         for instruction in program:
-            self.ram[address] = int(instruction,2)
+            # self.ram[address] = int(instruction,2)
+            self.ram_write(address, int(instruction,2))
             address += 1
 
     def ram_read(self, i):
         return self.ram[i]
     
     def ram_write(self, i, v):
-        self.ram[i] = j
-
+        self.ram[i] = v
+    
+    def push(self):
+        if self.reg[7] > 0:
+            self.reg[7] -= 1
+            self.stack[self.reg[7]] = self.reg[self.ram_read(self.pc + 1)]
+            self.pc += 2
+    
+    def pop(self):
+        if self.reg[7] < 256:
+            # self.ram_write(self.ram_read(self.pc + 1), self.stack[self.reg[7]])
+            self.reg[self.ram_read(self.pc + 1)] = self.stack[self.reg[7]]
+            self.reg[7] += 1
+            self.pc += 2
 
     def alu(self, op, reg_a=None, reg_b=None):
         """ALU operations."""
@@ -69,10 +84,14 @@ class CPU:
             this_instr = self.ram_read(self.pc)
             if this_instr == 0b00000001:
                 running = False
-            if this_instr == 0b01000111:
+            elif this_instr == 0b01000101:
+                self.push()
+            elif this_instr == 0b01000110:
+                self.pop()
+            elif this_instr == 0b01000111:
                 print(self.reg[self.ram[self.pc + 1]])
                 self.pc += 2
-            if this_instr == 0b10000010:
+            elif this_instr == 0b10000010:
                 self.reg[self.ram[self.pc+1]] = self.ram[self.pc+2]
                 self.pc += 3
             elif this_instr == 0b10100000:
