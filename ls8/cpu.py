@@ -179,6 +179,7 @@ class CPU:
         b = self.reg[reg_b]
         if op == "INC":
             self.reg[reg_a] += 1
+            self.pc += 2
         elif op == "NOT":
             self.reg[reg_a] = ~a
             self.pc += 2
