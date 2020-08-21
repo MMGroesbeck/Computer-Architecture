@@ -13,6 +13,8 @@ class CPU:
         self.reg = [0] * 8
         self.stack = [0] * 256
         self.reg[7] = 256
+        self.interrupts = [0] * 8
+        self.last_key = []
         self.commands = {
             0b00000000: self.nop,
             0b00000001: self.halt,
@@ -20,8 +22,11 @@ class CPU:
             0b01000101: self.push,
             0b01000110: self.pop,
             0b01000111: self.prn,
+            0b01001000: self.pra,
             0b01010000: self.call,
+            0b01010100: self.jmp,
             0b10000010: self.ldi,
+            0b10000100: self.st,
             0b10100000: self.alu,
             0b10100010: self.alu,
         }
@@ -64,31 +69,42 @@ class CPU:
         self.pc = self.stack[self.reg[7]]
         self.reg[7] += 1
     
-    def push(self):
-        if self.reg[7] > 0:
-            self.reg[7] -= 1
-            self.stack[self.reg[7]] = self.reg[self.ram_read(self.pc + 1)]
+    def push(self, v=None):
+        if v is None:
+            v = self.reg[self.ram_read(self.pc + 1)]
             self.pc += 2
+        self.reg[7] -= 1
+        self.stack[self.reg[7]] = v
     
-    def pop(self):
-        if self.reg[7] < 256:
-            self.reg[self.ram_read(self.pc + 1)] = self.stack[self.reg[7]]
-            self.reg[7] += 1
+    def pop(self, dest=None):
+        if dest is None:
+            dest = self.ram_read(self.pc + 1)
             self.pc += 2
+        self.reg[dest] = self.stack[self.reg[7]]
+        self.reg[7] += 1
     
     def prn(self):
-        print(self.reg[self.ram[self.pc + 1]])
+        print(self.reg[self.ram_read(self.pc + 1)])
         self.pc += 2
+    
+    def pra(self):
+        print(chr(self.reg[self.ram_read(self.pc + 1)]))
     
     def call(self):
         if self.reg[7] <= 0:
             raise Exception("Stack overflow.")
-        self.reg[7] -= 1
-        self.stack[self.reg[7]] = self.pc + 2
+        self.push(self.pc + 2)
+        self.pc = self.reg[self.ram_read(self.pc+1)]
+    
+    def jmp(self):
         self.pc = self.reg[self.ram_read(self.pc+1)]
     
     def ldi(self):
-        self.reg[self.ram[self.pc+1]] = self.ram[self.pc+2]
+        self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
+        self.pc += 3
+    
+    def st(self):
+        self.reg[self.ram_read(self.pc+1)] = self.reg[self.ram_read(self.pc+2)]
         self.pc += 3
 
     def alu(self, op, reg_a=None, reg_b=None):
