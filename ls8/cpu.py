@@ -32,16 +32,30 @@ class CPU:
             0b01011000: self.jlt,
             0b01011001: self.jle,
             0b01011010: self.jge,
+            0b01101001: self.alu,
             0b10000010: self.ldi,
             0b10000100: self.st,
             0b10100000: self.alu,
             0b10100010: self.alu,
-            0b10100111: self.alu
+            0b10100100: self.alu,
+            0b10100111: self.alu,
+            0b10101000: self.alu,
+            0b10101010: self.alu,
+            0b10101011: self.alu,
+            0b10101100: self.alu,
+            0b10101101: self.alu
         }
         self.com_args = {
+            0b01101001: ["NOT"],
             0b10100000: ["ADD"],
             0b10100010: ["MUL"],
-            0b10100111: ["CMP"]
+            0b10100100: ["MOD"],
+            0b10100111: ["CMP"],
+            0b10101000: ["AND"],
+            0b10101010: ["OR"],
+            0b10101011: ["XOR"],
+            0b10101100: ["SHL"],
+            0b10101101: ["SHR"]
         }
 
     def load(self, filename):
@@ -158,21 +172,46 @@ class CPU:
             reg_a = self.ram_read(self.pc + 1)
         if reg_b is None:
             reg_b = self.ram_read(self.pc + 2)
-        if op == "ADD":
+        a = self.reg[reg_a]
+        b = self.reg[reg_b]
+        if op == "NOT":
+            self.reg[reg_a] = ~a
+            self.pc += 2
+        elif op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
             self.pc += 3
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
             self.pc += 3
+        elif op == "MOD":
+            if b == 0:
+                raise Exception("Divide-by-zero error in MOD.")
+                self.halt()
+            else:
+                self.reg[reg_a] = a % b
+                self.pc += 3
         elif op == "CMP":
-            a = self.reg[reg_a]
-            b = self.reg[reg_b]
             if a == b:
                 self.flags = [0,0,1]
             elif a < b:
                 self.flags = [1,0,0]
             elif a > b:
                 self.flags = [0,1,0]
+            self.pc += 3
+        elif op == "AND":
+            self.reg[reg_a] = a & b
+            self.pc += 3
+        elif op == "OR":
+            self.reg[reg_a] = a | b
+            self.pc += 3
+        elif op == "XOR":
+            self.reg[reg_a] = a ^ b
+            self.pc += 3
+        elif op == "SHL":
+            self.reg[reg_a] = a << b
+            self.pc += 3
+        elif op == "SHR":
+            self.reg[reg_a] = a >> b
             self.pc += 3
         else:
             raise Exception("Unsupported ALU operation")
