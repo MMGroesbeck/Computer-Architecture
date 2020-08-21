@@ -111,7 +111,8 @@ class CPU:
         self.pc += 2
     
     def pra(self):
-        print(chr(self.reg[self.ram_read(self.pc + 1)]))
+        print(chr(self.reg[self.ram_read(self.pc + 1)]), end="")
+        self.pc += 2
     
     def call(self):
         if self.reg[7] <= 0:
