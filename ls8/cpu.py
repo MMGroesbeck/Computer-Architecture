@@ -15,6 +15,7 @@ class CPU:
         self.reg[7] = 256
         self.interrupts = [0] * 8
         self.last_key = []
+        self.flags = [0, 0, 0] #LGE
         self.commands = {
             0b00000000: self.nop,
             0b00000001: self.halt,
@@ -25,14 +26,22 @@ class CPU:
             0b01001000: self.pra,
             0b01010000: self.call,
             0b01010100: self.jmp,
+            0b01010101: self.jeq,
+            0b01010110: self.jne,
+            0b01010111: self.jgt,
+            0b01011000: self.jlt,
+            0b01011001: self.jle,
+            0b01011010: self.jge,
             0b10000010: self.ldi,
             0b10000100: self.st,
             0b10100000: self.alu,
             0b10100010: self.alu,
+            0b10100111: self.alu
         }
         self.com_args = {
             0b10100000: ["ADD"],
-            0b10100010: ["MUL"]
+            0b10100010: ["MUL"],
+            0b10100111: ["CMP"]
         }
 
     def load(self, filename):
@@ -99,6 +108,42 @@ class CPU:
     def jmp(self):
         self.pc = self.reg[self.ram_read(self.pc+1)]
     
+    def jeq(self):
+        if self.flags[2] == 1:
+            self.jmp()
+        else:
+            self.pc += 2
+    
+    def jne(self):
+        if self.flags[2] == 0:
+            self.jmp()
+        else:
+            self.pc += 2
+    
+    def jgt(self):
+        if self.flags[1] == 1:
+            self.jmp()
+        else:
+            self.pc += 2
+    
+    def jlt(self):
+        if self.flags[0] == 1:
+            self.jmp()
+        else:
+            self.pc += 2
+    
+    def jle(self):
+        if (self.flags[0] == 1) or (self.flags[2] == 1):
+            self.jmp()
+        else:
+            self.pc += 2
+    
+    def jge(self):
+        if (self.flags[1] == 1) or (self.flags[2] == 1):
+            self.jmp()
+        else:
+            self.pc += 2
+    
     def ldi(self):
         self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
         self.pc += 3
@@ -110,14 +155,24 @@ class CPU:
     def alu(self, op, reg_a=None, reg_b=None):
         """ALU operations."""
         if reg_a is None:
-            reg_a = self.ram[self.pc + 1]
+            reg_a = self.ram_read(self.pc + 1)
         if reg_b is None:
-            reg_b = self.ram[self.pc + 2]
+            reg_b = self.ram_read(self.pc + 2)
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
             self.pc += 3
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+            self.pc += 3
+        elif op == "CMP":
+            a = self.reg[reg_a]
+            b = self.reg[reg_b]
+            if a == b:
+                self.flags = [0,0,1]
+            elif a < b:
+                self.flags = [1,0,0]
+            elif a > b:
+                self.flags = [0,1,0]
             self.pc += 3
         else:
             raise Exception("Unsupported ALU operation")
