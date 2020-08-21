@@ -32,6 +32,7 @@ class CPU:
             0b01011000: self.jlt,
             0b01011001: self.jle,
             0b01011010: self.jge,
+            0b01100101: self.alu,
             0b01101001: self.alu,
             0b10000010: self.ldi,
             0b10000100: self.st,
@@ -46,6 +47,7 @@ class CPU:
             0b10101101: self.alu
         }
         self.com_args = {
+            0b01100101: ["INC"],
             0b01101001: ["NOT"],
             0b10100000: ["ADD"],
             0b10100010: ["MUL"],
@@ -175,7 +177,9 @@ class CPU:
             reg_b = self.ram_read(self.pc + 2)
         a = self.reg[reg_a]
         b = self.reg[reg_b]
-        if op == "NOT":
+        if op == "INC":
+            self.reg[reg_a] += 1
+        elif op == "NOT":
             self.reg[reg_a] = ~a
             self.pc += 2
         elif op == "ADD":
