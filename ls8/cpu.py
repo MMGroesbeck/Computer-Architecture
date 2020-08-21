@@ -14,17 +14,20 @@ class CPU:
         self.stack = [0] * 256
         self.reg[7] = 256
         self.commands = {
+            0b00000000: self.nop,
             0b00000001: self.halt,
+            0b00010001: self.ret,
             0b01000101: self.push,
             0b01000110: self.pop,
             0b01000111: self.prn,
+            0b01010000: self.call,
             0b10000010: self.ldi,
             0b10100000: self.alu,
-            0b10100010: self.alu
+            0b10100010: self.alu,
         }
         self.com_args = {
-            0b10100000: "ADD",
-            0b10100010: "MUL"
+            0b10100000: ["ADD"],
+            0b10100010: ["MUL"]
         }
 
     def load(self, filename):
@@ -36,8 +39,8 @@ class CPU:
             split_line = line.split()
             if len(split_line) > 0 and line[0] != "#":
                 program.append(split_line[0])
+        self.ram = [0] * (len(program))
         address = 0
-        self.ram = [0] * len(program)
         for instruction in program:
             self.ram_write(address, int(instruction,2))
             address += 1
@@ -49,8 +52,17 @@ class CPU:
     def ram_write(self, i, v):
         self.ram[i] = v
     
+    def nop(self):
+        self.pc += 1
+    
     def halt(self):
         self.running = False
+    
+    def ret(self):
+        if self.reg[7] >= 256:
+            raise Exception("Cannot return; stack empty.")
+        self.pc = self.stack[self.reg[7]]
+        self.reg[7] += 1
     
     def push(self):
         if self.reg[7] > 0:
@@ -60,7 +72,6 @@ class CPU:
     
     def pop(self):
         if self.reg[7] < 256:
-            # self.ram_write(self.ram_read(self.pc + 1), self.stack[self.reg[7]])
             self.reg[self.ram_read(self.pc + 1)] = self.stack[self.reg[7]]
             self.reg[7] += 1
             self.pc += 2
@@ -68,6 +79,13 @@ class CPU:
     def prn(self):
         print(self.reg[self.ram[self.pc + 1]])
         self.pc += 2
+    
+    def call(self):
+        if self.reg[7] <= 0:
+            raise Exception("Stack overflow.")
+        self.reg[7] -= 1
+        self.stack[self.reg[7]] = self.pc + 2
+        self.pc = self.reg[self.ram_read(self.pc+1)]
     
     def ldi(self):
         self.reg[self.ram[self.pc+1]] = self.ram[self.pc+2]
@@ -114,6 +132,6 @@ class CPU:
         while self.running and (self.pc < len(self.ram)):
             this_instr = self.ram_read(self.pc)
             if this_instr in self.com_args:
-                self.commands[this_instr](self.com_args[this_instr])
+                self.commands[this_instr](*self.com_args[this_instr])
             else:
                 self.commands[this_instr]()
